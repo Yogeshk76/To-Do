@@ -9,6 +9,8 @@ import {connectDB} from './config/db.js';
 
 const app = express();
 app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({extended: true}));
 
 
 const port = process.env.PORT || 3000;
