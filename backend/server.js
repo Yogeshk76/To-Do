@@ -5,6 +5,7 @@ dotenv.config();
 import express from 'express';
 import cors from 'cors';
 import {connectDB} from './config/db.js';
+import authRoutes from './routes/auth.route.js';
 
 
 const app = express();
@@ -17,16 +18,14 @@ const port = process.env.PORT || 3000;
 
 
 
-app.get('/', (req, res) => {
-  res.send('Hello World!');
-}
-);
+app.use('/api/auth', authRoutes)
 
 
 
-app.listen(port, () => {
-  connectDB();
-  console.log('Server is running on port 3000');
-}
-);
+connectDB().then(() => {
+  app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
+  });
+});
+
 
