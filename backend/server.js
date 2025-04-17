@@ -5,6 +5,7 @@ const app = express();
 import cors from 'cors';
 import {connectDB} from './config/db.js';
 import authRoutes from './routes/auth.route.js';
+import taskRoutes from './routes/task.route.js';
 
 app.use(cors());
 app.use(express.json());
@@ -12,6 +13,7 @@ const PORT = process.env.PORT || 3000;
 
 app.use('/api/auth', authRoutes);
 
+app.use('/api/tasks', taskRoutes);
 
 connectDB().then(() => {
   app.listen(PORT, () => {
