@@ -1,38 +1,44 @@
-import mongoose from 'mongoose';
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-import dotenv from 'dotenv';
-dotenv.config();
-
+import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 const userSchema = new mongoose.Schema({
-  email : {
+  email: {
     type: String,
     required: true,
     unique: true,
-  }, 
+  },
   password: {
     type: String,
     required: true,
   },
 }, {
   timestamps: true,
+}
+);
+
+
+
+userSchema.pre('save', async function (next) {
+  if (!this.isModified('password')) return next();
+  try {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+  } catch (err) {
+    next(err);
+  }
 });
 
-userSchema.methods.generateAuthToken = async function() {
-  return jwt.sign({ _id: this._id }, process.env.JWT_SECRET, { expiresIn: '24h' });
-}
+userSchema.methods.generateAuthToken = function () {
+  const token = jwt.sign({ id: this._id}, process.env.JWT_SECRET, {
+    expiresIn: '24h',
+  });
+  return token;
+};
 
-userSchema.statics.hashPassword = async function(password) {
-  const salt = await bcrypt.genSalt(10);
-  return bcrypt.hash(password, salt);
-}
+userSchema.methods.comparePassword = async function (enteredPassword) {
+  return await bcrypt.compare(enteredPassword, this.password);
+};
 
-userSchema.methods.comparePassword = async function(password) {
-  return bcrypt.compare(password, this.password);
-}
-
-
-export const User = mongoose.model('User', userSchema);
-
-
+export const User = mongoose.model("User", userSchema);

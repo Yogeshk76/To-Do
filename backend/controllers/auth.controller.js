@@ -1,74 +1,76 @@
 import {User} from '../models/user.model.js';
 
 
-export const registerUser = async (req, res) => {
+const registerUser = async (req, res) => {
+  const {email, password} = req.body;
+
   try {
-    const {email, password} = req.body;
-
-
-    //checking if the user already exists
     const existingUser = await User.findOne({email});
-    if (existingUser) {
-      return res.status(400).json({ message: 'User already exists' });
+
+    if(existingUser) {
+      return res.status(400).json({
+        message: 'User already exists',
+      });
     }
 
-    //hashing the password
-    const hashedPassword = await User.hashPassword(password);
-
-    //creating the user
-    const user = new User({
+    const user = await User.create({
       email,
-      password: hashedPassword,
+      password,
     });
-    await user.save();
 
-    //generating the token
-    const token = await user.generateAuthToken();
 
     res.status(201).json({
-      message: 'User registered successfully',
-      token,
+      message: 'User created successfully',
       user: {
         id: user._id,
         email: user.email,
       },
     });
-
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: 'Internal server error' });
+  }
+  catch (error) {
+    res.status(500).json({
+      message: 'Internal server error',
+      error,
+    });
   }
 }
 
+const loginUser = async (req, res) => {
+  const {email, password} = req.body;
 
-export const loginUser = async (req, res) => {
   try {
-    const {email, password} = req.body;
-    //checking if the user exists
-
     const user = await User.findOne({email});
-    if (!user) {
-      return res.status(400).json({ message: 'Invalid credentials' });
+    if(!user) {
+      return res.status(400).json({
+        message: 'Invalid credentials',
+      });
     }
 
-    //checking if the password is correct
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch) {
-      return res.status(400).json({ message: 'Invalid credentials' });
-    }
-
-    //generating the token
-    const token = await user.generateAuthToken();
-    res.status(200).json({
-      message: 'User logged in successfully',
-      token,
-      user: {
-        id: user._id,
-        email: user.email,
-      },
+  const isMatch = await user.comparePassword(password);
+  if(!isMatch) {
+    return res.status(400).json({
+      message: 'Invalid credentials',
     });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: 'Internal server error' });
   }
+  const token = user.generateAuthToken();
+  res.status(200).json({
+    message: 'User logged in successfully',
+    user: {
+      id: user._id,
+      email: user.email,
+    },
+    token,
+  });
+  }
+  catch (error) {
+    res.status(500).json({
+      message: 'Internal server error',
+      error,
+    });
+  }
+}
+
+export {
+  registerUser,
+  loginUser,
 }
