@@ -54,14 +54,13 @@ const loginUser = async (req, res) => {
   }
   const token = user.generateAuthToken();
 
-  res.setHeader('Authorization', `Bearer ${token}`);
-
   res.status(200).json({
     message: 'User logged in successfully',
     user: {
       id: user._id,
       email: user.email,
-    }
+    },
+    token,
   });
   }
   catch (error) {
