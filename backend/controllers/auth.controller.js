@@ -1,7 +1,17 @@
 import {User} from '../models/user.model.js';
+import { validationResult } from 'express-validator';
 
 
 const registerUser = async (req, res) => {
+  const errors = validationResult(req);
+
+  if(!errors.isEmpty()) {
+    return res.status(422).json({
+      message: 'Validation failed',
+      errors: errors.array(),
+    });
+  }
+  
   const {email, password} = req.body;
 
   try {
@@ -36,13 +46,22 @@ const registerUser = async (req, res) => {
 }
 
 const loginUser = async (req, res) => {
+  const errors = validationResult(req);
+
+  if(!errors.isEmpty()) {
+    return res.status(422).json({
+      message: 'Validation failed',
+      errors: errors.array(),
+    });
+  }  
+  
   const {email, password} = req.body;
 
   try {
     const user = await User.findOne({email});
     if(!user) {
-      return res.status(400).json({
-        message: 'Invalid credentials',
+      return res.status(401).json({
+        message: 'Unauthorized',
       });
     }
 
@@ -72,7 +91,7 @@ const loginUser = async (req, res) => {
 }
 
 const logoutUser = async (req, res) => {
-  res.send(200).json({message : 'User logged out successfully'});
+  res.status(200).json({message : 'User logged out successfully'});
 }
 
 export {

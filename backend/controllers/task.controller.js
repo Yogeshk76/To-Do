@@ -1,6 +1,16 @@
 import {Task} from '../models/task.model.js';
+import { validationResult } from 'express-validator';
 
 const createTask = async (req, res) => {
+  const errors = validationResult(req);
+
+  if(!errors.isEmpty()) {
+    return res.status(422).json({
+      message: 'Validation failed',
+      errors: errors.array(),
+    });
+  }  
+
   const {title, description} = req.body;
 
   try {
@@ -44,7 +54,7 @@ const getTasks = async (req, res) => {
       success: true,
       tasks,
     });
-    console.log(req.query, req.params, req.body);
+    
   }
   catch(error) {
     res.status(500).json({
@@ -55,48 +65,58 @@ const getTasks = async (req, res) => {
   }
 };
 
-  const updateTask = async (req, res) => {
-    const {title, description, completed} = req.body;
-    const {id} = req.params;
+const updateTask = async (req, res) => {
+  const errors = validationResult(req);
+  if(!errors.isEmpty()) {
+    return res.status(422).json({
+      message: 'Validation failed',
+      errors: errors.array(),
+    });
+  }
 
-    try {
-      const task = await Task.findByIdAndUpdate(id);
+  const { title, description, completed } = req.body;
+  const { id } = req.params;
 
-      if (!task) {
-        return res.status(404).json({
-          message: 'Task not found',
-          success: false,
-        });
-      }
+  try {
+    const task = await Task.findById(id);
 
-      if (task.user.toString() !== req.user._id.toString()) {
-        return res.status(403).json({
-          message: 'Not authorized to update this task',
-          success: false,
-        });
-      }
-
-      if (title) task.title = title;
-      if (description) task.description = description;
-      if (completed !== undefined) task.completed = completed;
-
-      await task.save();
-      res.status(200).json({
-        message: 'Task updated successfully',
-        success: true,
-        task,
-      });
-    }
-    catch(error) {
-      res.status(500).json({
-        message: 'Error updating task',
+    if (!task) {
+      return res.status(404).json({
+        message: 'Task not found',
         success: false,
-        error,
       });
     }
-  };  
 
-  const deleteTask = async (req, res) => {
+    if (task.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        message: 'Not authorized to update this task',
+        success: false,
+      });
+    }
+
+    const updatedTask = await Task.findByIdAndUpdate(
+      id,
+      { title, description, completed },
+      { new: true }
+    );
+
+    res.status(200).json({
+      message: 'Task updated successfully',
+      success: true,
+      task: updatedTask,
+    });
+  }
+  catch (error) {
+    res.status(500).json({
+      message: 'Error updating task',
+      success: false,
+      error,
+    });
+  }
+};
+
+
+const deleteTask = async (req, res) => {
     const {id} = req.params;
 
     try {
@@ -115,7 +135,7 @@ const getTasks = async (req, res) => {
         });
       }
 
-      await task.remove();
+      await Task.deleteOne({ _id: id });
 
       res.status(200).json({
         message: 'Task deleted successfully',
@@ -123,6 +143,7 @@ const getTasks = async (req, res) => {
       });
     }
     catch(error) {
+      console.log(error)
       res.status(500).json({
         message: 'Error deleting task',
         success: false,
